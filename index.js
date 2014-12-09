@@ -6,6 +6,7 @@ var quickTemp = require('quick-temp');
 var mkdirp = require('mkdirp');
 var browserify = require('browserify');
 var walkSync  = require('walk-sync');
+var hashTree = require('broccoli-kitchen-sink-helpers').hashTree;
 
 function FastBrowserify(inputTree, options) {
   if (!(this instanceof FastBrowserify)) { return new FastBrowserify(inputTree, options); }
@@ -83,19 +84,19 @@ FastBrowserify.prototype.read = function(readTree) {
             if (file[0] == '.') {
               file = path.resolve(dep.basedir, file);
             }
-            self.watchFiles[file] = file;
+            self.watchFiles[file] = hashTree(file);
             bundle.dependentFileNames[file] = file;
           }
         });
 
         bundle.browserify.on('file', function(file) {
-          self.watchFiles[file] = file;
+          self.watchFiles[file] = hashTree(file);
           bundle.dependentFileNames[file] = file;
         });
 
         bundle.browserify.on('package', function(pkg) {
           var packageFile = path.join(pkg.__dirname, 'package.json');
-          self.watchFiles[packageFile] = packageFile;
+          self.watchFiles[packageFile] = hashTree(packageFile);
           bundle.dependentFileNames[packageFile] = packageFile;
         });
 
@@ -144,27 +145,19 @@ FastBrowserify.prototype.invalidateCache = function() {
 
   // Look for watched files that have changed, and mark them for deletion
   for (file in this.watchFiles) {
-    var valid = true;
-    var exists = fs.existsSync(file);
-    var fileMTime = exists ? fs.statSync(file).mtime.getTime() : null;
+    if (hashTree(file) !== this.watchFiles[file]) {
+      // look through the bundles to see if any of them depend on this file and are older than this file
+      for (bundleKey in this.bundles) {
+        bundle = this.bundles[bundleKey];
 
-    // look through the bundles to see if any of them depend on this file and are older than this file
-    for (bundleKey in this.bundles) {
-      bundle = this.bundles[bundleKey];
-
-      // look through this bundle's dependencies and test if they are newer than the output file
-      if (bundle.dependentFileNames[file]) {
-        if (! exists || fileMTime > outputFileMTimes[bundleKey]) {
-          valid = false;
-
-          if (! _.include(invalidatedBundles, bundle)) {
-            invalidatedBundles.push(bundle);
-          }
+        // look through this bundle's dependencies and test if they are newer than the output file
+        if (bundle.dependentFileNames[file] && ! _.include(invalidatedBundles, bundle)) {
+          invalidatedBundles.push(bundle);
         }
       }
-    }
 
-    if (! valid) { invalidatedFiles.push(file); }
+      invalidatedFiles.push(file);
+    }
   }
 
   // remove the invalidated files from the cache
