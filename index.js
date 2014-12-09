@@ -6,7 +6,6 @@ var quickTemp = require('quick-temp');
 var mkdirp = require('mkdirp');
 var browserify = require('browserify');
 var walkSync  = require('walk-sync');
-var stabilizingWriter = require('broccoli-stabilizing-writer');
 
 function FastBrowserify(inputTree, options) {
   if (!(this instanceof FastBrowserify)) { return new FastBrowserify(inputTree, options); }
