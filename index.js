@@ -104,9 +104,14 @@ FastBrowserify.prototype.read = function(readTree) {
           var entryPoints = [];
 
           if (bundleOptions.glob) {
-            if (! _.isFunction(bundleOptions.outputPath)) throw "When glob == true, outputPath must be a function that returns the output bundle filename";
+            if (! _.isFunction(bundleOptions.outputPath)) {
+              throw "When glob == true, outputPath must be a function that returns the output bundle filename";
+            }
             outputRelativePath = bundleOptions.outputPath.call(self, relativePath);
           } else {
+            if (bundleOptions.outputPath) {
+              throw "outputPath is only valid for glob bundle specifications, specify the output bundle filename in the key of the bundle specification";
+            }
             outputRelativePath = relativePath;
           }
 
