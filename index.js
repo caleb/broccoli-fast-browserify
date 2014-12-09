@@ -105,7 +105,6 @@ FastBrowserify.prototype.read = function(readTree) {
         // if this browserify bundle hasn't been invalidated
         // skip this file
         if (! _.include(invalidatedBundles, bundle)) {
-          console.log('Skipping bundle', bundle.outputBasename);
           return;
         }
       }
