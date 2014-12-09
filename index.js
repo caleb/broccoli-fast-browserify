@@ -175,7 +175,9 @@ FastBrowserify.prototype.cleanupBundles = function() {
     var bundle = this.bundles[key];
 
     if (! fs.existsSync(bundle.inputFileName)) {
-      fs.unlinkSync(bundle.outputFileName);
+      if (fs.existsSync(bundle.outputFileName)) {
+        fs.unlinkSync(bundle.outputFileName);
+      }
       bundlesToDelete.push(key);
     }
   }
