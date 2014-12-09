@@ -1,0 +1,2 @@
+var r = require('./required-module');
+console.log('this is another bundle');
