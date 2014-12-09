@@ -54,9 +54,6 @@ var directoryGlobBundles = fastBrowserify('test/directory-glob-bundles', {
   }
 });
 
-module.exports = simpleWithCustomization;
-return;
-
 module.exports = merge([simpleBundle,
                         simpleWithCustomization,
                         nonGlob,
