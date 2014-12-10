@@ -45,7 +45,7 @@ var directoryGlobBundles = fastBrowserify('test/directory-glob-bundles', {
     'packages/*': {
       glob: true,
       entryPoints: function(p) {
-        return [p + 'index.js']
+        return [p + 'index.js'];
       },
       outputPath: function(p) {
         return p + 'bundle.js';
@@ -78,7 +78,7 @@ var allTogetherNow = fastBrowserify('test', {
     'directory-glob-bundles/packages/*': {
       glob: true,
       entryPoints: function(p) {
-        return [p + 'index.js']
+        return [p + 'index.js'];
       },
       outputPath: function(p) {
         return p + 'bundle.js';
