@@ -31,8 +31,9 @@ FastBrowserify.prototype.getOptions = function(options) {
   if (bundleExtension[0] != '.') { bundleExtension = '.' + bundleExtension; }
   if (outputExtension[0] != '.') { outputExtension = '.' + outputExtension; }
 
-  var defaultBundleConfig = {};
-  defaultBundleConfig['**/*' + bundleExtension] = {
+  var defaultBundleTemplate = {};
+  defaultBundleTemplate['**/*' + bundleExtension] = {
+    key: '**/*' + bundleExtension,
     glob: true,
 
     entryPoints: function(relativePath) {
@@ -55,12 +56,19 @@ FastBrowserify.prototype.getOptions = function(options) {
     }
   }
 
+  // add the bundle's key to the bundle's config, for convenience
+  if (_.isObject(options.bundles)) {
+    for (var key in options.bundles) {
+      options.bundles[key].key = key;
+    }
+  }
+
   return _.extend({
     browserify: {},
     bundleExtension: bundleExtension,
     outputExtension: outputExtension,
     outputDirectory: null,
-    bundles: defaultBundleConfig
+    bundles: defaultBundleTemplate
   }, options);
 };
 
@@ -75,16 +83,16 @@ FastBrowserify.prototype.read = function(readTree) {
   return readTree(this.inputTree).then(function(srcDir) {
     // remove output files that don't have a corrisponding input file anymore
     self.cleanupBundles();
-    var invalidatedBundles = self.invalidateCache();
+    self.invalidateCache();
 
     for (bundleNameOrGlob in self.options.bundles) {
-      var bundleOptions = self.options.bundles[bundleNameOrGlob];
+      var bundleTemplate = self.options.bundles[bundleNameOrGlob];
       var bundleFiles = [];
 
       // If we're dealing with multiple bundle files in a single declaration
       // then the bundle key is a glob to the files that serve as the basis to
       // determine which bundles to create (they are often the entrypoints to the bundle)
-      if (bundleOptions.glob) {
+      if (bundleTemplate.glob) {
         bundleFiles = glob.sync(bundleNameOrGlob, { cwd: srcDir, mark: true });
       } else {
         // If we're dealing with a single bundle declaration, then the bundle key
@@ -100,16 +108,15 @@ FastBrowserify.prototype.read = function(readTree) {
           var outputBasename;
           var outputRelativePath;
           var outputAbsolutePath;
-          var entryPointGlobs = [];
-          var entryPoints = [];
+          var entryPoints;
 
-          if (bundleOptions.glob) {
-            if (! _.isFunction(bundleOptions.outputPath)) {
+          if (bundleTemplate.glob) {
+            if (! _.isFunction(bundleTemplate.outputPath)) {
               throw "When glob == true, outputPath must be a function that returns the output bundle filename";
             }
-            outputRelativePath = bundleOptions.outputPath.call(self, relativePath);
+            outputRelativePath = bundleTemplate.outputPath.call(self, relativePath);
           } else {
-            if (bundleOptions.outputPath) {
+            if (bundleTemplate.outputPath) {
               throw "outputPath is only valid for glob bundle specifications, specify the output bundle filename in the key of the bundle specification";
             }
             outputRelativePath = relativePath;
@@ -120,40 +127,25 @@ FastBrowserify.prototype.read = function(readTree) {
             outputRelativePath = path.join(self.options.outputDirectory, outputRelativePath);
           }
 
-          if (_.isFunction(bundleOptions.entryPoints)) {
-          entryPointGlobs = bundleOptions.entryPoints.call(self, relativePath);
-          } else if (_.isArray(bundleOptions.entryPoints)) {
-          entryPointGlobs = bundleOptions.entryPoints;
-          } else if (_.isString(bundleOptions.entryPoints)) {
-          entryPointGlobs = [bundleOptions.entryPoints];
-          } else {
-            // If this is a glob bundle specification, then let's assume that the entryPoints are the results of the glob
-            if (bundleOptions.glob) {
-            entryPointGlobs = [relativePath];
-            } else {
-              throw "You must specify entryPoints as a function, array, or string";
-            }
-          }
+          entryPoints = self.readEntryPoints(srcDir, relativePath, bundleTemplate);
 
-          // go through the entrypoints the user specified and resolve the globs
-          entryPointGlobs.forEach(function(g) {
-            entryPoints = entryPoints.concat(glob.sync(g, { cwd: srcDir, nodir: true }));
-          });
-
-          // GO through the entry points and prepend ./ to their names to make them relative
-          for (var i = 0; i < entryPoints.length; ++i) {
-            var entryPoint = entryPoints[i];
-            if (entryPoint[0] !== '/') {
-              entryPoints[i] = './' + entryPoint;
-            }
+          // hash the entryPoints so we can tell if they change so we can update
+          // the browerify optins with the new files
+          var entryPointsHashes = []
+          for (var i = 0; i < entryPoints.absolute.length; ++i) {
+            entryPointsHashes.push(hashTree(entryPoints.absolute[i]));
           }
 
           outputBasename = path.basename(outputRelativePath);
           outputAbsolutePath = path.resolve(self.destDir, outputRelativePath);
 
           bundle = {
+            key: relativePath,
+            srcDir: srcDir,
+            template: bundleTemplate,
             browserify: null,
-            entryPoints: entryPoints,
+            entryPoints: entryPoints.absolute,
+            entryPointsHashes: entryPointsHashes,
             outputBasename: outputBasename,
             outputFileName: outputAbsolutePath,
             browserifyOptions: {},
@@ -166,10 +158,8 @@ FastBrowserify.prototype.read = function(readTree) {
             packageCache: self.packageCache,
             fullPaths: true,
             extensions: ['.js', self.options.bundleExtension].concat(self.options.browserify.extensions || []),
-            entries: entryPoints
+            entries: entryPoints.relative
           });
-
-          console.log('creating bundle', outputRelativePath, bundle.browserifyOptions);
 
           bundle.browserify = browserify(bundle.browserifyOptions);
 
@@ -202,9 +192,7 @@ FastBrowserify.prototype.read = function(readTree) {
         } else {
           // if this browserify bundle hasn't been invalidated
           // skip this file
-          if (! _.include(invalidatedBundles, bundle)) {
-            return;
-          }
+          return;
         }
 
         // Create the target directory in the destination
@@ -219,6 +207,52 @@ FastBrowserify.prototype.read = function(readTree) {
       return self.destDir;
     });
   });
+};
+
+FastBrowserify.prototype.readEntryPoints = function(srcDir, bundleKey, bundleOptions) {
+  var entryPoints = [];
+  var entryPointsAbsolute = [];
+  var entryPointGlobs = [];
+
+  if (_.isFunction(bundleOptions.entryPoints)) {
+    entryPointGlobs = bundleOptions.entryPoints.call(this, bundleKey);
+  } else if (_.isArray(bundleOptions.entryPoints)) {
+    entryPointGlobs = bundleOptions.entryPoints;
+  } else if (_.isString(bundleOptions.entryPoints)) {
+    entryPointGlobs = [bundleOptions.entryPoints];
+  } else {
+    // If this is a glob bundle specification, then let's assume that the entryPoints are the results of the glob
+    if (bundleOptions.glob) {
+      entryPointGlobs = [bundleKey];
+    } else {
+      throw "You must specify entryPoints as a function, array, or string";
+    }
+  }
+
+  // go through the entrypoints the user specified and resolve the globs
+  entryPointGlobs.forEach(function(g) {
+    entryPoints = entryPoints.concat(glob.sync(g, { cwd: srcDir, nodir: true }));
+  });
+
+  for (var i = 0; i < entryPoints.length; ++i) {
+    var entryPoint = entryPoints[i];
+    if (entryPoint[0] !== '/') {
+      entryPointsAbsolute[i] = path.resolve(srcDir, entryPoint);
+    }
+  }
+
+  // GO through the entry points and prepend ./ to their names to make them relative commonjs modules
+  for (var i = 0; i < entryPoints.length; ++i) {
+    var entryPoint = entryPoints[i];
+    if (entryPoint[0] !== '/' && ! entryPoint.match(/^\.\//)) {
+      entryPoints[i] = './' + entryPoint;
+    }
+  }
+
+  return {
+    relative: entryPoints,
+    absolute: entryPointsAbsolute
+  }
 };
 
 FastBrowserify.prototype.invalidateCache = function() {
@@ -249,12 +283,27 @@ FastBrowserify.prototype.invalidateCache = function() {
         bundle = this.bundles[bundleKey];
 
         // look through this bundle's dependencies and test if they are newer than the output file
-        if (bundle.dependentFileNames[file] && ! _.include(invalidatedBundles, bundle)) {
-          invalidatedBundles.push(bundle);
+        if (bundle.dependentFileNames[file] && ! _.include(invalidatedBundles, bundleKey)) {
+          invalidatedBundles.push(bundleKey);
         }
       }
 
       invalidatedFiles.push(file);
+    }
+  }
+
+  // if the entry file names are different now than before, invalidate the bundle
+  for (bundleKey in this.bundles) {
+    bundle = this.bundles[bundleKey];
+    var newEntries = this.readEntryPoints(bundle.srcDir, bundle.key, bundle.template);
+    var entries = bundle.entryPoints;
+    // if the entrypoints have changed, invalidate the bundle so we can rebuild with the new entry point
+    for (var i = 0; i < newEntries.absolute.length; ++i) {
+      if (i >= entries.length || newEntries.absolute[i] != entries[i]) {
+        if (! _.include(invalidatedBundles, bundleKey)) {
+          invalidatedBundles.push(bundleKey);
+        }
+      }
     }
   }
 
@@ -264,7 +313,9 @@ FastBrowserify.prototype.invalidateCache = function() {
     delete this.watchFiles[file];
   }.bind(this));
 
-  return invalidatedBundles;
+  invalidatedBundles.forEach(function(bundleKey) {
+    delete this.bundles[bundleKey];
+  }.bind(this));
 };
 
 FastBrowserify.prototype.cleanupBundles = function() {
@@ -273,7 +324,11 @@ FastBrowserify.prototype.cleanupBundles = function() {
   for (var key in this.bundles) {
     var bundle = this.bundles[key];
 
-    if (! fs.existsSync(bundle.inputFileName)) {
+    var allEntryFilesMissing = _.all(bundle.entryPoints, function(ep) {
+      return ! fs.existsSync(ep);
+    });
+
+    if (allEntryFilesMissing) {
       if (fs.existsSync(bundle.outputFileName)) {
         fs.unlinkSync(bundle.outputFileName);
       }
