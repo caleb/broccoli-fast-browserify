@@ -279,7 +279,9 @@ FastBrowserify.prototype.invalidateCache = function() {
 
   // Look for watched files that have changed, and mark them for deletion
   for (file in this.watchFiles) {
-    if (hashTree(file) !== this.watchFiles[file]) {
+    if (! fs.existsSync(file) || hashTree(file) !== this.watchFiles[file]) {
+      invalidatedFiles.push(file);
+
       // look through the bundles to see if any of them depend on this file and are older than this file
       for (bundleKey in this.bundles) {
         bundle = this.bundles[bundleKey];
@@ -289,8 +291,6 @@ FastBrowserify.prototype.invalidateCache = function() {
           invalidatedBundles.push(bundleKey);
         }
       }
-
-      invalidatedFiles.push(file);
     }
   }
 
