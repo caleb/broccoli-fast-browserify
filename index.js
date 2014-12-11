@@ -12,7 +12,7 @@ var hashTree   = require('broccoli-kitchen-sink-helpers').hashTree;
 function FastBrowserify(inputTree, options) {
   if (!(this instanceof FastBrowserify)) { return new FastBrowserify(inputTree, options); }
 
-  this.options = this.getOptions(options);
+  this.options = this.getOptions(options || {});
   this.destDir = quickTemp.makeOrRemake(this, 'tmpDestDir');
 
   this.inputTree = inputTree;
