@@ -39,6 +39,8 @@
   "devDependencies": {
     "broccoli": "^0.13.3",
     "broccoli-merge-trees": "^0.2.1",
-    "jshint": "^2.4.4"
+    "faucet": "0.0.1",
+    "jshint": "^2.4.4",
+    "tape": "^3.0.3"
   }
 }
