@@ -1,4 +1,4 @@
-var fastBrowserify = require('../../index.js');
+var fastBrowserify = require('../../../index.js');
 
 var tree = fastBrowserify('lib');
 

@@ -4,7 +4,7 @@
   "description": "A caching, fast broccoli plugin that creates browserify bundles",
   "main": "index.js",
   "scripts": {
-    "test": "jshint *.js"
+    "test": "faucet test/*.js"
   },
   "repository": {
     "type": "git",
@@ -39,6 +39,7 @@
   "devDependencies": {
     "broccoli": "^0.13.3",
     "broccoli-merge-trees": "^0.2.1",
+    "copy-dereference": "^1.0.0",
     "faucet": "0.0.1",
     "jshint": "^2.4.4",
     "tape": "^3.0.3"
