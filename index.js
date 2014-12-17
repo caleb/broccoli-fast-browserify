@@ -64,7 +64,9 @@ FastBrowserify.prototype.getOptions = function(options) {
   }
 
   return _.extend({
-    browserify: {},
+    browserify: {
+      debug: true
+    },
     bundleExtension: bundleExtension,
     outputExtension: outputExtension,
     outputDirectory: null,
@@ -151,7 +153,7 @@ FastBrowserify.prototype.read = function(readTree) {
               entryPointsHashes: entryPointsHashes,
               outputBasename: outputBasename,
               outputFileName: outputAbsolutePath,
-              browserifyOptions: {},
+              browserifyOptions: _.clone(self.options.browserify),
               dependentFileNames: {}
             };
 
