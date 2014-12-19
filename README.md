@@ -71,7 +71,7 @@ var tree = fastBrowserify(tree, {
 
 Entrypoints is an array of globs, so you have a lot of power over what gets built.
 
-## More Customizability, Generating Multiple Bundles with One Configuration Entry
+## More Customizability: Generating Multiple Bundles with One Configuration Entry
 
 If you would like to generate multiple bundles based on some criteria, like the
 default behavior (i.e. generating one bundle per `*.browserify` input file),
