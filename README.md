@@ -122,7 +122,7 @@ ROOT/
         ... more files
 ```
 
-Let's say you want to generate a bundle for each of the packages, where the entry point is that package's `index.js` file. And then you wanted to generate a package which contains all three sub packages. We will put these packages in the root of the output tree, with a name which is their package name plus '.js'.
+Let's say you want to generate a bundle for each of the packages, where the entry point is that package's `index.js` file. And then you wanted to generate a package which contains all three sub packages (`all.js`). We will put these packages in the root of the output tree.
 
 This is how you might accomplish that:
 
@@ -147,9 +147,23 @@ var tree = fastBrowserify(tree, {
         // '/utilities.js', '/ui.js' and '/server.js'
         return path.basename(relativePath) + '.js'
       }
+    },
+    "all.js": {
+      // we don't set glob: true here because we want only one output file, (in this case /all.js)S
+      entryPoints: ['lib/packages/*/index.js']
     }
   }
 });
+```
+
+The output tree would look like:
+
+```
+ROOT/
+  all.js
+  server.js
+  ui.js
+  utilities.js
 ```
 
 ## License
