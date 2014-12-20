@@ -1,7 +1,7 @@
 {
   "name": "broccoli-fast-browserify",
   "version": "0.2.3",
-  "description": "A caching, fast broccoli plugin that creates browserify bundles",
+  "description": "A caching, flexible Browserify filter for Broccoli",
   "main": "index.js",
   "scripts": {
     "test": "faucet test/*.js"
