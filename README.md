@@ -32,7 +32,7 @@ use `broccoli-fast-browserify` with the default configuration:
 ```js
 var fastBrowserify = require('broccoli-fast-browserify');
 
-var tree = fastBrowserify(tree);
+var tree = fastBrowserify(inputTree);
 ```
 
 ## Customizing broccoli-fast-browserify
@@ -45,7 +45,7 @@ or `outputExtension` options:
 ```js
 var fastBrowserify = require('broccoli-fast-browserify');
 
-var tree = fastBrowserify(tree, {
+var tree = fastBrowserify(inputTree, {
   bundleExtension: ".bundle",
   outputExtension: ".es5"
 });
@@ -60,7 +60,7 @@ entrypoints, this is what you would do:
 ```js
 var fastBrowserify = require('broccoli-fast-browserify');
 
-var tree = fastBrowserify(tree, {
+var tree = fastBrowserify(inputTree, {
   bundles: {
     'lib/bundle.js': {
       entryPoints: ['**/index.js']
@@ -80,7 +80,7 @@ generated. If you would like to disable sourcemaps, you would do this:
 ```javascript
 var fastBrowserify = require('broccoli-fast-browserify');
 
-var tree = fastBrowserify(tree, {
+var tree = fastBrowserify(inputTree, {
   browserify: {
     debug: false
   }
@@ -101,7 +101,7 @@ this example):
 ```javascript
 var fastBrowserify = require('broccoli-fast-browserify');
 
-var tree = fastBrowserify(tree, {
+var tree = fastBrowserify(inputTree, {
   bundles: {
     "**/*.browserify": {
       glob: true,
@@ -174,7 +174,7 @@ This is how you might accomplish that:
 ```javascript
 var fastBrowserify = require('broccoli-fast-browserify');
 
-var tree = fastBrowserify(tree, {
+var tree = fastBrowserify(inputTree, {
   bundles: {
     "lib/packages/*": {
       glob: true,
