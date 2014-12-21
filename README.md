@@ -71,6 +71,22 @@ var tree = fastBrowserify(tree, {
 
 Entrypoints is an array of globs, so you have a lot of power over what gets built.
 
+## Customizing Browserify (e.g. Enabling or Disabling Sourcemaps)
+
+You can pass configuration directly to browserify by specifying a `browserify`
+option in the options hash. By default `debug` is set to true so source maps are
+generated. If you would like to disable sourcemaps, you would do this:
+
+```javascript
+var fastBrowserify = require('broccoli-fast-browserify');
+
+var tree = fastBrowserify(tree, {
+  browserify: {
+    debug: false
+  }
+});
+```
+
 ## More Customizability: Generating Multiple Bundles with One Configuration Entry
 
 If you would like to generate multiple bundles based on some criteria, like the
