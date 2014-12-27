@@ -212,6 +212,39 @@ ROOT/
   utilities.js
 ```
 
+## Specifying External Modules
+
+Browserify has the concept of [external modules][], which it skips over when
+building a bundle. Browserify assumes that these modules will be made available
+at runtime. If you wanted to build two modules, one which included React and the
+other which didn't, you would specify an `excludes` array for the bundle for
+which you wanted React excluded. You can also specify `excludes` at the top-level
+options to exclude a module from all bundles:
+
+```javascript
+var fastBrowserify = require('broccoli-fast-browserify');
+
+var tree = fastBrowserify(inputTree, {
+  externals: ['vertx'],
+  bundles: {
+    "withoutReact.js": {
+      externals: ['react'],
+      entryPoints: ['index.js']
+    },
+    "withReact.js": {
+      entryPoints: ['index.js']
+    }
+  }
+});
+```
+
+In this example, the `vertx` module is not included in either of the generated
+bundles, and the `react` module is not included in the `withoutReact.js` bundle
+but is included in the `withReact.js` bundle.
+
+[external modules]: https://github.com/substack/node-browserify#multiple-bundles
+
+
 ## License
 
 The 3 Clause BSD License (3-Clause-BSD). See [LICENSE](LICENSE) for details.

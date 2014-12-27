@@ -67,6 +67,7 @@ FastBrowserify.prototype.getOptions = function(options) {
     browserify: {
       debug: true
     },
+    externals: [],
     bundleExtension: bundleExtension,
     outputExtension: outputExtension,
     outputDirectory: null,
@@ -167,6 +168,15 @@ FastBrowserify.prototype.read = function(readTree) {
             });
 
             bundle.browserify = browserify(bundle.browserifyOptions);
+
+            // Set up the external files
+            self.options.externals.forEach(function(external) {
+              bundle.browserify.external(external);
+            });
+
+            (bundleTemplate.externals || []).forEach(function(external) {
+              bundle.browserify.external(external);
+            });
 
             bundle.browserify.on('dep', function(dep) {
               if (typeof dep.id == 'string') {
