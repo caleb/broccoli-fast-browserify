@@ -4,7 +4,7 @@
 
 # broccoli-fast-browserify
 
-The broccoli-fast-browserify-watchify plugin bundles your assets with
+The broccoli-fast-browserify plugin bundles your assets with
 [browserify](https://github.com/substack/browserify).
 
 This plugin differs from the other watchify/browserify plugins for broccoli in
