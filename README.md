@@ -1,3 +1,5 @@
+![Broccoli Fast Browserify Logo](https://caleb.github.com/broccoli-fast-browserify/images/logo/broccoli-browserify-logo.png)
+
 # broccoli-fast-browserify
 
 The broccoli-fast-browserify-watchify plugin bundles your assets with
