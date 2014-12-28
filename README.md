@@ -1,4 +1,6 @@
-![Broccoli Fast Browserify Logo](https://caleb.github.com/broccoli-fast-browserify/images/logo/broccoli-browserify-logo.png)
+<p style="text-align: center;">
+  <img src="https://caleb.github.com/broccoli-fast-browserify/images/logo/broccoli-browserify-logo.png" style="width: 128px;" alt="Broccoli Fast Browserify Logo"/>
+</p>
 
 # broccoli-fast-browserify
 
