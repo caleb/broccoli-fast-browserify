@@ -5,7 +5,7 @@
 # broccoli-fast-browserify
 
 The broccoli-fast-browserify plugin bundles your assets with
-[browserify](https://github.com/substack/browserify).
+[browserify](https://github.com/substack/node-browserify).
 
 This plugin differs from the other watchify/browserify plugins for broccoli in
 that it uses caching to significantly speed up compilation. There is an existing
