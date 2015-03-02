@@ -248,6 +248,25 @@ but is included in the `withReact.js` bundle.
 
 [external modules]: https://github.com/substack/node-browserify#multiple-bundles
 
+## Specifying Transforms
+
+You even can specify custom browserify [transforms][] for each bundle:
+
+```javascript
+var fastBrowserify = require('broccoli-fast-browserify');
+
+var tree = fastBrowserify(inputTree, {
+  bundles: {
+    "transformed.js": {
+      transform: require('coffeeify'),
+      entryPoints: ['index.js']
+    }
+  }
+});
+```
+
+[transforms]: https://github.com/substack/node-browserify#btransformtr-opts
+
 
 ## License
 

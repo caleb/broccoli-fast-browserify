@@ -178,6 +178,18 @@ FastBrowserify.prototype.read = function(readTree) {
               bundle.browserify.external(external);
             });
 
+            if (bundleTemplate.transform) {
+              // Set up the transforms
+              bundleTemplate.transform = [].concat(bundleTemplate.transform);
+              bundleTemplate.transform.forEach(function (transform) {
+                if (transform.tr) {
+                  bundle.browserify.transform(transform.tr, transform.options);
+                } else {
+                  bundle.browserify.transform(transform);
+                }
+              });
+            }
+
             bundle.browserify.on('dep', function(dep) {
               if (typeof dep.id == 'string') {
                 bundle.browserifyOptions.cache[dep.id] = dep;

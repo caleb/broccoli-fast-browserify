@@ -57,6 +57,24 @@ var directoryGlobBundles = fastBrowserify('test/directory-glob-bundles', {
   }
 });
 
+var transformed = fastBrowserify('test/transformed', {
+  bundles: {
+    'transformed/bundle.js': {
+      entryPoints: ['index.js'],
+      transform: require('./test/transformed/transformify')
+    }
+  }
+});
+
+// var transformed = fastBrowserify('test', {
+//   bundles: {
+//     'transformed/bundle.js': {
+//       entryPoints: ['transform/index.js']
+//     }
+//   },
+//   transform: require('./test/transfom/transformify')
+// });
+
 var allTogetherNow = fastBrowserify('test', {
   outputDirectory: 'all-together-now',
   bundles: {
@@ -97,4 +115,5 @@ module.exports = merge([simpleBundle,
                         multipleEntries,
                         fancyMultipleEntries,
                         directoryGlobBundles,
+                        transformed,
                         allTogetherNow]);
