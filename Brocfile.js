@@ -66,15 +66,6 @@ var transformed = fastBrowserify('test/transformed', {
   }
 });
 
-// var transformed = fastBrowserify('test', {
-//   bundles: {
-//     'transformed/bundle.js': {
-//       entryPoints: ['transform/index.js']
-//     }
-//   },
-//   transform: require('./test/transfom/transformify')
-// });
-
 var allTogetherNow = fastBrowserify('test', {
   outputDirectory: 'all-together-now',
   bundles: {
