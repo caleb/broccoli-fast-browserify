@@ -42,6 +42,7 @@
     "copy-dereference": "^1.0.0",
     "faucet": "0.0.1",
     "jshint": "^2.4.4",
-    "tape": "^3.0.3"
+    "tape": "^3.0.3",
+    "through": "^2.3.6"
   }
 }
