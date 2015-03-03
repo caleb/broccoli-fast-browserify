@@ -14,6 +14,24 @@ module.exports.bundleExists = bundleExists;
 module.exports.bundleContains = bundleContains;
 module.exports.bundleDoesntContain = bundleDoesntContain;
 
+/**
+ * Sets up a test environment with copies of the required test's files in a tmp
+ * directory.
+ *
+ * t: The Tape context variable
+ * relativePath: The path relative to the test directory that contains the files
+ *               for this test. These files are copied into a tmp directory
+ * brocfunc: This function is called with the newly created tmp directory (with
+ *           the files from `relativePath` copied) and you should return a
+ *           Broccoli tree built with the broccoli module you want to test
+ *
+ * Returns
+ *
+ * A hash { srcDir, tree, builder }, where srcDir is the tmp directory created
+ * by this function, tree is the tree built by the `brocfunc`, and builder is
+ * the broccoli builder created by this function.
+ *
+ */
 function setup(t, relativePath, brocfunc) {
   var srcDir = setupSrcDir(t, relativePath);
   var tree = brocfunc(srcDir);
