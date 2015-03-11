@@ -65,7 +65,8 @@ FastBrowserify.prototype.getOptions = function(options) {
 
   return _.extend({
     browserify: {
-      debug: true
+      debug: true,
+      fullPaths: true
     },
     externals: [],
     bundleExtension: bundleExtension,
@@ -162,7 +163,6 @@ FastBrowserify.prototype.read = function(readTree) {
               basedir: srcDir,
               cache: self.cache,
               packageCache: self.packageCache,
-              fullPaths: true,
               extensions: ['.js', self.options.bundleExtension].concat(self.options.browserify.extensions || []),
               entries: entryPoints.relative
             });
