@@ -1,0 +1,6 @@
+/* jshint esnext:true, browserify:true, devel:true, browser:true */
+"use strict";
+
+export default function() {
+  console.log("I am an es2015 module");
+};

@@ -1,6 +1,7 @@
 var path = require('path');
 var merge = require('broccoli-merge-trees');
 var fastBrowserify = require('./index');
+var babelify = require('babelify');
 
 var simpleBundle = fastBrowserify('test/simple', {
   outputDirectory: 'simple'
@@ -57,11 +58,28 @@ var directoryGlobBundles = fastBrowserify('test/directory-glob-bundles', {
   }
 });
 
-var transformed = fastBrowserify('test/transformed', {
+var transformed = fastBrowserify('test/transformed/simple', {
   bundles: {
-    'transformed/bundle.js': {
+    'transformed/simple/bundle.js': {
       entryPoints: ['index.js'],
       transform: require('./test/transformed/transformify')
+    }
+  }
+});
+
+var transformedBabelify = fastBrowserify('test/transformed/babelify', {
+  browserify: {
+    extensions: [".babel"]
+  },
+  bundles: {
+    'transformed/babelify/bundle.js': {
+      entryPoints: ['es2015-modules.babel'],
+      transform: {
+        tr: babelify,
+        options: {
+          extensions: [".babel"]
+        }
+      }
     }
   }
 });
@@ -107,4 +125,5 @@ module.exports = merge([simpleBundle,
                         fancyMultipleEntries,
                         directoryGlobBundles,
                         transformed,
+                        transformedBabelify,
                         allTogetherNow]);

@@ -1,0 +1,4 @@
+/* jshint esnext:true, browserify:true, devel:true, browser:true */
+"use strict";
+
+import myModule from "./my-module";

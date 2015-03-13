@@ -182,10 +182,10 @@ FastBrowserify.prototype.read = function(readTree) {
               // Set up the transforms
               bundleTemplate.transform = [].concat(bundleTemplate.transform);
               bundleTemplate.transform.forEach(function (transform) {
-                if (transform.tr) {
-                  bundle.browserify.transform(transform.tr, transform.options);
-                } else {
+                if (_.isFunction(transform)) {
                   bundle.browserify.transform(transform);
+                } else {
+                  bundle.browserify.transform(transform.tr, transform.options || {});
                 }
               });
             }
