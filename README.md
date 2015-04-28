@@ -267,6 +267,23 @@ var tree = fastBrowserify(inputTree, {
 
 [transforms]: https://github.com/substack/node-browserify#btransformtr-opts
 
+If you need to specify options to a transform, you can use this form:
+
+```javascript
+var fastBrowserify = require('broccoli-fast-browserify');
+
+var tree = fastBrowserify(inputTree, {
+  bundles: {
+    transformed.js: {
+      transform: {
+        tr: require('browserify-shim'),
+        options: { global: true }
+      },
+      entryPoints: ['index.js']
+    }
+  }
+});
+```
 
 ## License
 
