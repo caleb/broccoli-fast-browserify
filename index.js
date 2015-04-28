@@ -7,6 +7,8 @@ var mkdirp     = require('mkdirp');
 var browserify = require('browserify');
 var walkSync   = require('walk-sync');
 var glob       = require('glob');
+var through    = require('through2');
+var xtend      = require('xtend');
 var hashTree   = require('broccoli-kitchen-sink-helpers').hashTree;
 
 function FastBrowserify(inputTree, options) {
@@ -162,7 +164,6 @@ FastBrowserify.prototype.read = function(readTree) {
               basedir: srcDir,
               cache: self.cache,
               packageCache: self.packageCache,
-              fullPaths: true,
               extensions: ['.js', self.options.bundleExtension].concat(self.options.browserify.extensions || []),
               entries: entryPoints.relative
             });
@@ -190,19 +191,29 @@ FastBrowserify.prototype.read = function(readTree) {
               });
             }
 
-            bundle.browserify.on('dep', function(dep) {
-              if (typeof dep.id == 'string') {
-                bundle.browserifyOptions.cache[dep.id] = dep;
-              }
-              if (typeof dep.file == 'string') {
-                var file = dep.file;
-                if (file[0] == '.') {
-                  file = path.resolve(dep.basedir, file);
+            // Watch dependencies for changes and invalidate the cache when needed
+            var collect = function() {
+              bundle.browserify.pipeline.get('deps').push(through.obj(function(row, enc, next) {
+                // console.log('caching file', row.file);
+                if (self.cache) {
+                  bundle.browserifyOptions.cache[row.file] = {
+                    id: row.file,
+                    source: row.source,
+                    deps: xtend({}, row.deps),
+                    file: row.file
+                  };
                 }
-                self.watchFiles[file] = hashTree(file);
-                bundle.dependentFileNames[file] = file;
-              }
-            });
+                self.watchFiles[row.file] = hashTree(row.file);
+                bundle.dependentFileNames[row.file] = row.file;
+
+                this.push(row);
+                next();
+              }));
+            };
+
+            // Cache the dependencies and re-run the cache when we re-bundle
+            bundle.browserify.on('reset', collect);
+            collect();
 
             bundle.browserify.on('file', function(file) {
               self.watchFiles[file] = hashTree(file);
