@@ -1,6 +1,6 @@
 {
   "name": "broccoli-fast-browserify",
-  "version": "0.2.5",
+  "version": "0.2.6",
   "description": "A caching, flexible Browserify filter for Broccoli",
   "main": "index.js",
   "scripts": {
