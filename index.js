@@ -138,7 +138,7 @@ FastBrowserify.prototype.read = function(readTree) {
             console.log("Bundle specified by \"", relativePath, "\" does not have any entry files");
           } else {
             // hash the entryPoints so we can tell if they change so we can update
-            // the browerify optins with the new files
+            // the browerify options with the new files
             var entryPointsHashes = [];
             for (var i = 0; i < entryPoints.absolute.length; ++i) {
               entryPointsHashes.push(hashTree(entryPoints.absolute[i]));
