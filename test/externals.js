@@ -12,8 +12,12 @@ function setup(t) {
       externals: ['globallyExternal'],
       outputDirectory: 'externals',
       bundles: {
+        'subdir/bundle.js': {
+          externals: ['./included.js'],
+          entryPoints: ['subdir/index.js']
+        },
         'bundle.js': {
-          externals: ['bundleExternalNonExistantModule', './included'],
+          externals: ['bundleExternalNonExistantModule', './included.js'],
           entryPoints: ['index.js']
         },
         'all.js': {
@@ -27,7 +31,7 @@ function setup(t) {
 
 tape.test("handles modules declared as external in the global configuration and bundle configuration", function(t) {
   t.test("builds the correct bundles in the correct output directory", function(t) {
-    t.plan(6);
+    t.plan(9);
 
     var testBroc = setup(t);
     testBroc.builder.build().then(function() {
@@ -36,6 +40,14 @@ tape.test("handles modules declared as external in the global configuration and 
           /this bundle should not include the globally or bundle excluded modules/
       ]);
       helpers.bundleDoesntContain(t, testBroc.tree, "externals/bundle.js", [
+          /marked external in one bundle/
+      ]);
+
+      helpers.bundleExists(t, testBroc.tree, "externals/subdir/bundle.js");
+      helpers.bundleContains(t, testBroc.tree, "externals/subdir/bundle.js", [
+          /this bundle should not include the globally or bundle excluded modules/
+      ]);
+      helpers.bundleDoesntContain(t, testBroc.tree, "externals/subdir/bundle.js", [
           /marked external in one bundle/
       ]);
 

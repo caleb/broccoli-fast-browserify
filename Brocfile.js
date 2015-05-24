@@ -84,6 +84,25 @@ var transformedBabelify = fastBrowserify('test/transformed/babelify', {
   }
 });
 
+var externals = fastBrowserify('test/externals', {
+  externals: ['globallyExternal'],
+  outputDirectory: 'externals',
+  bundles: {
+    'subdir/bundle.js': {
+      externals: ['./included.js'],
+      entryPoints: ['subdir/index.js']
+    },
+    'bundle.js': {
+      externals: ['bundleExternalNonExistantModule', './included.js'],
+      entryPoints: ['index.js']
+    },
+    'all.js': {
+      externals: ['bundleExternalNonExistantModule'],
+      entryPoints: ['index.js']
+    }
+  }
+});
+
 var allTogetherNow = fastBrowserify('test', {
   outputDirectory: 'all-together-now',
   bundles: {
@@ -126,4 +145,5 @@ module.exports = merge([simpleBundle,
                         directoryGlobBundles,
                         transformed,
                         transformedBabelify,
+                        externals,
                         allTogetherNow]);

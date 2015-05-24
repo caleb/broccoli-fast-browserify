@@ -171,12 +171,29 @@ FastBrowserify.prototype.read = function(readTree) {
             bundle.browserify = browserify(bundle.browserifyOptions);
 
             // Set up the external files
-            self.options.externals.forEach(function(external) {
-              bundle.browserify.external(external);
-            });
+            [].concat(self.options.externals).concat(bundleTemplate.externals).filter(Boolean).forEach(function(external) {
+              var externalFile;
+              var externalSplit = external.split(/:/);
+              // var externalOptions = { basedir: srcDir };
+              var externalOptions = { };
 
-            (bundleTemplate.externals || []).forEach(function(external) {
-              bundle.browserify.external(external);
+              if (externalSplit.length === 2) {
+                externalFile = externalSplit[0];
+                var externalExpose = externalSplit[1];
+
+                externalOptions = xtend({
+                  expose: externalExpose
+                }, externalOptions);
+              } else {
+                externalFile = external;
+              }
+
+              if (/^[\/.]/.test(externalFile)) {
+                // externalFile = path.resolve(srcDir, externalFile);
+                externalFile = path.resolve(externalFile);
+              }
+
+              bundle.browserify.external(externalFile, externalOptions);
             });
 
             if (bundleTemplate.transform) {
@@ -194,8 +211,10 @@ FastBrowserify.prototype.read = function(readTree) {
             // Watch dependencies for changes and invalidate the cache when needed
             var collect = function() {
               bundle.browserify.pipeline.get('deps').push(through.obj(function(row, enc, next) {
+                var file = row.expose ? bundle.browserify._expose[row.id] : row.file;
+
                 if (self.cache) {
-                  bundle.browserifyOptions.cache[row.file] = {
+                  bundle.browserifyOptions.cache[file] = {
                     source: row.source,
                     deps: xtend({}, row.deps)
                   };
@@ -217,8 +236,10 @@ FastBrowserify.prototype.read = function(readTree) {
 
             bundle.browserify.on('package', function(pkg) {
               var packageFile = path.join(pkg.__dirname, 'package.json');
-              self.watchFiles[packageFile] = hashTree(packageFile);
-              bundle.dependentFileNames[packageFile] = packageFile;
+              if (fs.existsSync(packageFile)) {
+                self.watchFiles[packageFile] = hashTree(packageFile);
+                bundle.dependentFileNames[packageFile] = packageFile;
+              }
             });
 
             self.bundles[relativePath] = bundle;
