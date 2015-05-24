@@ -194,17 +194,12 @@ FastBrowserify.prototype.read = function(readTree) {
             // Watch dependencies for changes and invalidate the cache when needed
             var collect = function() {
               bundle.browserify.pipeline.get('deps').push(through.obj(function(row, enc, next) {
-                // console.log('caching file', row.file);
                 if (self.cache) {
                   bundle.browserifyOptions.cache[row.file] = {
-                    id: row.file,
                     source: row.source,
-                    deps: xtend({}, row.deps),
-                    file: row.file
+                    deps: xtend({}, row.deps)
                   };
                 }
-                self.watchFiles[row.file] = hashTree(row.file);
-                bundle.dependentFileNames[row.file] = row.file;
 
                 this.push(row);
                 next();
