@@ -78,14 +78,15 @@ FastBrowserify.prototype.getOptions = function(options) {
 };
 
 FastBrowserify.prototype.cleanup = function() {
-  quickTemp.remove(this, 'tmpDestDir');
+  // quickTemp.remove(this, 'tmpDestDir');
 };
 
-FastBrowserify.prototype.read = function(readTree) {
+FastBrowserify.prototype.rebuild = function() {
   var self = this;
   var promises = [];
+  var srcDir = this.inputPath;
+  self.destDir = this.outputPath;
 
-  return readTree(this.inputTree).then(function(srcDir) {
     // remove output files that don't have a corrisponding input file anymore
     self.cleanupBundles();
     self.invalidateCache();
@@ -254,10 +255,7 @@ FastBrowserify.prototype.read = function(readTree) {
       });
     }
 
-    return RSVP.all(promises).then(function(outputFiles) {
-      return self.destDir;
-    });
-  });
+    return RSVP.all(promises);
 };
 
 FastBrowserify.prototype.readEntryPoints = function(srcDir, bundleKey, bundleTemplate) {
