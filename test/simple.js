@@ -53,7 +53,7 @@ tape.test("simple case", function(t) {
       fs.unlinkSync(path.join(testBroc.srcDir, 'bundle.js.browserify'));
       return testBroc.builder.build();
     }).then(function() {
-      t.notOk(fs.existsSync(path.join(testBroc.tree.destDir, 'bundle.js')), "Removed bundle file source file removes corresponding output file");
+      t.notOk(fs.existsSync(path.join(testBroc.tree.outputPath, 'bundle.js')), "Removed bundle file source file removes corresponding output file");
       t.end();
     }).finally(function() {
       helpers.teardown(t, testBroc);

@@ -52,9 +52,9 @@ tape.test("handles bundles being built off of directories (i.e. the bundle glob 
           /this is package3/
       ]);
 
-      t.notOk(fs.existsSync(path.join(testBroc.tree.destDir, 'directory-glob-bundles/packages/package1/index.js')), "non bundle file not in output tree");
-      t.notOk(fs.existsSync(path.join(testBroc.tree.destDir, 'directory-glob-bundles/packages/package2/index.js')), "non bundle file not in output tree");
-      t.notOk(fs.existsSync(path.join(testBroc.tree.destDir, 'directory-glob-bundles/packages/package3/index.js')), "non bundle file not in output tree");
+      t.notOk(fs.existsSync(path.join(testBroc.tree.outputPath, 'directory-glob-bundles/packages/package1/index.js')), "non bundle file not in output tree");
+      t.notOk(fs.existsSync(path.join(testBroc.tree.outputPath, 'directory-glob-bundles/packages/package2/index.js')), "non bundle file not in output tree");
+      t.notOk(fs.existsSync(path.join(testBroc.tree.outputPath, 'directory-glob-bundles/packages/package3/index.js')), "non bundle file not in output tree");
       t.end();
     }).finally(function() {
       helpers.teardown(t, testBroc);
@@ -100,7 +100,7 @@ tape.test("handles bundles being built off of directories (i.e. the bundle glob 
       return testBroc.builder.build();
     }).then(function() {
       // check
-      t.notOk(fs.existsSync(path.join(testBroc.tree.destDir, 'directory-glob-bundles/packages/package2/bundle.js')), "bundle with no entry points not in output");
+      t.notOk(fs.existsSync(path.join(testBroc.tree.outputPath, 'directory-glob-bundles/packages/package2/bundle.js')), "bundle with no entry points not in output");
 
       t.end();
     }).finally(function() {

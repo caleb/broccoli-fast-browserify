@@ -57,8 +57,8 @@ function teardown(t, testBroc) {
 }
 
 function bundleExists(t, tree, bundlePath) {
-  var destDir = tree.destDir;
-  var absluteBundlePath = path.join(destDir, bundlePath);
+  var outputPath = tree.outputPath;
+  var absluteBundlePath = path.join(outputPath, bundlePath);
 
   t.ok(fs.existsSync(absluteBundlePath), bundlePath + " bundle exists");
 }
@@ -68,8 +68,8 @@ function bundleContains(t, tree, bundlePath, regexes) {
     regexes = [regexes];
   }
 
-  var destDir = tree.destDir;
-  var absluteBundlePath = path.join(destDir, bundlePath);
+  var outputPath = tree.outputPath;
+  var absluteBundlePath = path.join(outputPath, bundlePath);
   var bundleString = fs.readFileSync(absluteBundlePath).toString();
 
   regexes.forEach(function(regex) {
@@ -82,8 +82,8 @@ function bundleDoesntContain(t, tree, bundlePath, regexes) {
     regexes = [regexes];
   }
 
-  var destDir = tree.destDir;
-  var absluteBundlePath = path.join(destDir, bundlePath);
+  var outputPath = tree.outputPath;
+  var absluteBundlePath = path.join(outputPath, bundlePath);
   var bundleExists = fs.existsSync(absluteBundlePath);
 
   var bundleString = fs.readFileSync(absluteBundlePath).toString();
