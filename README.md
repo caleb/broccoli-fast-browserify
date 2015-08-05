@@ -250,7 +250,7 @@ but is included in the `withReact.js` bundle.
 
 ## Specifying Transforms
 
-You even can specify custom browserify [transforms][] for each bundle.
+You even can specify custom [browserify transforms][] for each bundle.
 The `transform` option can take the values described in [node-browserify][] or
 be an array of such values. For example:
 
@@ -267,7 +267,7 @@ var tree = fastBrowserify(inputTree, {
 });
 ```
 
-[transforms]: https://github.com/substack/node-browserify#btransformtr-opts
+[browserify transforms]: https://github.com/substack/node-browserify#btransformtr-opts
 [node-browserify]: https://github.com/substack/node-browserify#btransformtr-opts
 
 If you need to specify options to a transform, you can wrap the transform
