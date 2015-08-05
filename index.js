@@ -169,6 +169,12 @@ FastBrowserify.prototype.read = function(readTree) {
             });
 
             bundle.browserify = browserify(bundle.browserifyOptions);
+            
+            // Make sure any files are added at the beginning, in case polyfills are added.
+            if (bundleTemplate.add) {
+              // Set up the transforms
+              bundle.browserify.add(bundleTemplate.add)
+            }
 
             // Set up the external files
             [].concat(self.options.externals).concat(bundleTemplate.externals).filter(Boolean).forEach(function(external) {
