@@ -134,8 +134,8 @@ FastBrowserify.prototype.read = function(readTree) {
 
           entryPoints = self.readEntryPoints(srcDir, relativePath, bundleTemplate);
 
-          if (entryPoints.absolute.length === 0) {
-            console.log("Bundle specified by \"", relativePath, "\" does not have any entry files");
+          if (entryPoints.absolute.length === 0 && !bundleTemplate.require) {
+            console.log("Bundle specified by \"", relativePath, "\" does not have any entry files nor required modules.");
           } else {
             // hash the entryPoints so we can tell if they change so we can update
             // the browerify options with the new files
@@ -200,11 +200,19 @@ FastBrowserify.prototype.read = function(readTree) {
               // Set up the transforms
               bundleTemplate.transform = [].concat(bundleTemplate.transform);
               bundleTemplate.transform.forEach(function (transform) {
-                if (_.isFunction(transform)) {
-                  bundle.browserify.transform(transform);
-                } else {
+                if (_.isPlainObject(transform)) {
                   bundle.browserify.transform(transform.tr, transform.options || {});
+                } else {
+                  bundle.browserify.transform.apply(bundle.browserify, Array.prototype.concat(transform));
                 }
+              });
+            }
+
+            if (bundleTemplate.require) {
+              // Set up the requires
+              bundleTemplate.require = Array.prototype.concat(bundleTemplate.require);
+              bundleTemplate.require.forEach(function (require) {
+                browserify.prototype.require.apply(bundle.browserify, Array.prototype.concat(require))
               });
             }
 
@@ -267,7 +275,9 @@ FastBrowserify.prototype.readEntryPoints = function(srcDir, bundleKey, bundleTem
   var i;
   var entryPoint;
 
-  if (_.isFunction(bundleTemplate.entryPoints)) {
+  if (bundleTemplate.entryPoints === undefined) {
+    entryPointGlobs = [];
+  } else if (_.isFunction(bundleTemplate.entryPoints)) {
     entryPointGlobs = bundleTemplate.entryPoints.call(this, bundleKey);
   } else if (_.isArray(bundleTemplate.entryPoints)) {
     entryPointGlobs = bundleTemplate.entryPoints;
