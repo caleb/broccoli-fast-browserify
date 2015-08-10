@@ -42,6 +42,24 @@ function setupBabelify(t) {
   });
 }
 
+function setupBabelifyGruntSyntax(t) {
+  return helpers.setup(t, 'transformed', function(srcDir) {
+    return fastBrowserify(srcDir, {
+      browserify: {
+        extensions: [".babel"]
+      },
+      bundles: {
+        'babelify/bundle.js': {
+          entryPoints: ['babelify/es2015-modules.babel'],
+          transform: [
+            [ babelfiy, { extensions: ".babel" } ]
+          ]
+        }
+      }
+    });
+  });
+}
+
 tape.test("transform test", function(t) {
   t.test("builds the correct bundles and runs the specified transforms", function(t) {
     t.plan(2);
@@ -61,6 +79,21 @@ tape.test("transform test", function(t) {
   t.test("builds es2015 modules with babelify", function(t) {
     t.plan(2);
     var testBroc = setupBabelify(t);
+
+    testBroc.builder.build().then(function(hash) {
+      helpers.bundleExists(t, testBroc.tree, "babelify/bundle.js");
+
+      helpers.bundleContains(t, testBroc.tree, "babelify/bundle.js", /I am an es2015 module/);
+
+      t.end();
+    }).finally(function() {
+      helpers.teardown(t, testBroc);
+    });
+  });
+
+  t.test("supports the grunt argument syntax", function(t) {
+    t.plan(2);
+    var testBroc = setupBabelifyGruntSyntax(t);
 
     testBroc.builder.build().then(function(hash) {
       helpers.bundleExists(t, testBroc.tree, "babelify/bundle.js");
