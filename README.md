@@ -250,7 +250,9 @@ but is included in the `withReact.js` bundle.
 
 ## Specifying Transforms
 
-You even can specify custom browserify [transforms][] for each bundle:
+You even can specify custom [browserify transforms][] for each bundle.
+The `transform` option can take the values described in [node-browserify][] or
+be an array of such values. For example:
 
 ```javascript
 var fastBrowserify = require('broccoli-fast-browserify');
@@ -265,9 +267,12 @@ var tree = fastBrowserify(inputTree, {
 });
 ```
 
-[transforms]: https://github.com/substack/node-browserify#btransformtr-opts
+[browserify transforms]: https://github.com/substack/node-browserify#btransformtr-opts
+[node-browserify]: https://github.com/substack/node-browserify#btransformtr-opts
 
-If you need to specify options to a transform, you can use this form:
+If you need to specify options to a transform, you can wrap the transform
+and its options in an array with 2 elements. See the `'browserify-shim'`
+transform below:
 
 ```javascript
 var fastBrowserify = require('broccoli-fast-browserify');
@@ -275,15 +280,37 @@ var fastBrowserify = require('broccoli-fast-browserify');
 var tree = fastBrowserify(inputTree, {
   bundles: {
     transformed.js: {
-      transform: {
-        tr: require('browserify-shim'),
-        options: { global: true }
-      },
+      transform: [
+          'coffeeify',
+        // the 'browserify-shim' takes options
+        [ require('browserify-shim'), { global: true } ]
+      ],
       entryPoints: ['index.js']
     }
   }
 });
 ```
+
+## Specifying Requires
+
+You can specify [browserify requires][] and expose modules with the same API as
+[transforms][].
+Example:
+
+```javascript
+var fastBrowserify = require('broccoli-fast-browserify');
+
+var tree = fastBrowserify(inputTree, {
+  bundles: {
+    transformed.js: {
+      require: [ 'react', { expose: 'React' } ]
+    }
+  }
+});
+```
+
+[browserify requires]: https://github.com/substack/node-browserify#brequirefile-opts
+[transforms]: https://github.com/caleb/broccoli-fast-browserify#specifying-transforms
 
 ## License
 
