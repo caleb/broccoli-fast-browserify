@@ -28,7 +28,7 @@
   "homepage": "https://github.com/caleb/broccoli-fast-browserify",
   "dependencies": {
     "broccoli-kitchen-sink-helpers": "^0.2.5",
-    "browserify": "^10.2.1",
+    "browserify": "10.2.4",
     "glob": "^4.3.1",
     "lodash": "^2.4.1",
     "mkdirp": "^0.5.0",
