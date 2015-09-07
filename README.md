@@ -4,6 +4,11 @@
 
 # broccoli-fast-browserify
 
+<strong>NOTE: We are locked into `browserify` version `< 10.2.5` because
+Browserify changed the way they handle symlinks, and we need to adjust
+`broccoli-fast-browserify` to handle this. As soon as `broccoli-fast-browserify`
+is fixed, we will bump the version of `browserify`.</strong>
+
 The broccoli-fast-browserify plugin bundles your assets with
 [browserify](https://github.com/substack/node-browserify).
 
@@ -17,6 +22,10 @@ hood.
 filesystem change detection to determine when to rebuild. We don't need this
 functionality because broccoli does that for us! Instead, this plugin borrows
 the caching logic from `watchify` and adapts it to be more suitable for broccoli.
+
+Check out the [the wiki][] for more examples of using `broccoli-fast-browserify`.
+
+[the wiki]: https://github.com/caleb/broccoli-fast-browserify/wiki
 
 ## Installation
 
@@ -295,6 +304,7 @@ var tree = fastBrowserify(inputTree, {
 
 You can specify [browserify requires][] and expose modules with the same API as
 [transforms][].
+
 Example:
 
 ```javascript
@@ -311,6 +321,14 @@ var tree = fastBrowserify(inputTree, {
 
 [browserify requires]: https://github.com/substack/node-browserify#brequirefile-opts
 [transforms]: https://github.com/caleb/broccoli-fast-browserify#specifying-transforms
+
+## Creating a Separate Bundle for NPM Modules
+
+Often you will want to create a separate bundle for your NPM modules. This is
+easy with `broccoli-fast-browserify`. Check out the wiki page on [separating app and 3rd party bundles][Separate-app-and-3rd-party-bundles]
+for an example.
+
+[Separate-app-and-3rd-party-bundles]: https://github.com/caleb/broccoli-fast-browserify/wiki/Separate-app-and-3rd-party-bundles
 
 ## License
 
