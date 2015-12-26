@@ -96,5 +96,30 @@ tape.test("simple case", function(t) {
     });
   });
 
+  t.test("rebuilds bundle when dependency has changed and then entry point has changed", function(t) {
+    t.plan(6);
+
+    var testBroc = setup(t);
+
+    testBroc.builder.build().then(function() {
+      fs.writeFileSync(path.join(testBroc.srcDir, 'required-module.js'), "console.log(\"changed required file\");");
+      return testBroc.builder.build();
+    }).then(function() {
+      helpers.bundleExists(t, testBroc.tree, "bundle.js");
+      helpers.bundleContains(t, testBroc.tree, "bundle.js", /changed required file/);
+      helpers.bundleDoesntContain(t, testBroc.tree, "bundle.js", /this is a required module/);
+    }).then(function() {
+      fs.writeFileSync(path.join(testBroc.srcDir, 'bundle.js.browserify'), "var r = require('./required-module'); console.log(\"changed main bundle file\");");
+      return testBroc.builder.build();
+    }).then(function() {
+      helpers.bundleExists(t, testBroc.tree, "bundle.js");
+      helpers.bundleContains(t, testBroc.tree, "bundle.js", /changed main bundle file/);
+      helpers.bundleDoesntContain(t, testBroc.tree, "bundle.js", /this is a required module/);
+      t.end();
+    }).finally(function() {
+      helpers.teardown(t, testBroc);
+    });
+  });
+
   t.end();
 });

@@ -348,7 +348,10 @@ FastBrowserify.prototype.invalidateCache = function() {
         bundle = this.bundles[bundleKey];
 
         // look through this bundle's dependencies and test if they are newer than the output file
+        // or check through the entry points and test if they are newer than the output file
         if (bundle.dependentFileNames[file] && ! _.include(invalidatedBundles, bundleKey)) {
+          invalidatedBundles.push(bundleKey);
+        } else if (_.include(bundle.entryPoints, file) && ! _.include(invalidatedBundles, bundleKey)) {
           invalidatedBundles.push(bundleKey);
         }
       }
