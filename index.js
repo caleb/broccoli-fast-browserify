@@ -5,7 +5,6 @@ var RSVP       = require('rsvp');
 var quickTemp  = require('quick-temp');
 var mkdirp     = require('mkdirp');
 var browserify = require('browserify');
-var walkSync   = require('walk-sync');
 var glob       = require('glob');
 var through    = require('through2');
 var xtend      = require('xtend');
@@ -28,7 +27,6 @@ function FastBrowserify(inputTree, options) {
 FastBrowserify.prototype.getOptions = function(options) {
   var bundleExtension = options.bundleExtension || '.browserify';
   var outputExtension = options.outputExtension || '.js';
-  var self = this;
 
   if (bundleExtension[0] != '.') { bundleExtension = '.' + bundleExtension; }
   if (outputExtension[0] != '.') { outputExtension = '.' + outputExtension; }
@@ -255,7 +253,7 @@ FastBrowserify.prototype.read = function(readTree) {
             // Create the target directory in the destination
             mkdirp.sync(path.dirname(bundle.outputFileName));
 
-            promise = self.bundle(bundle);
+            var promise = self.bundle(bundle);
             promises.push(promise);
           }
         }
@@ -325,7 +323,6 @@ FastBrowserify.prototype.invalidateCache = function() {
   var file;
   var i;
   var time;
-  var fileMTime;
 
   for (bundleKey in this.bundles) {
     bundle = this.bundles[bundleKey];

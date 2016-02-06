@@ -4,7 +4,7 @@
   "description": "A caching, flexible Browserify filter for Broccoli",
   "main": "index.js",
   "scripts": {
-    "test": "faucet test/*.js"
+    "test": "tape test/*.js | faucet"
   },
   "repository": {
     "type": "git",
@@ -28,6 +28,7 @@
   "homepage": "https://github.com/caleb/broccoli-fast-browserify",
   "dependencies": {
     "broccoli-kitchen-sink-helpers": "^0.2.5",
+    "broccoli-plugin": "^1.2.1",
     "browserify": "10.2.4",
     "glob": "^4.3.1",
     "lodash": "^2.4.1",
@@ -35,7 +36,6 @@
     "quick-temp": "^0.1.2",
     "rsvp": "^3.0.14",
     "through2": "^0.6.5",
-    "walk-sync": "^0.1.3",
     "xtend": "^4.0.0"
   },
   "devDependencies": {
@@ -46,6 +46,7 @@
     "faucet": "0.0.1",
     "jshint": "^2.4.4",
     "tape": "^3.0.3",
-    "through": "^2.3.6"
+    "through": "^2.3.6",
+    "walk-sync": "^0.2.6"
   }
 }
