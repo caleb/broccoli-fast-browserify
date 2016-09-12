@@ -1,3 +1,5 @@
+# This library is deprecated in favor of [broccoli-watchify](https://github.com/eploko/broccoli-watchify) which is more up-to-date and more well maintained.
+
 <p align="center">
   <img src="http://caleb.github.io/broccoli-fast-browserify/images/logo/broccoli-browserify-logo.png" width="128" alt="Broccoli Fast Browserify Logo"/>
 </p>
