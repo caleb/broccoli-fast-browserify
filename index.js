@@ -2,22 +2,22 @@ var _          = require('lodash');
 var fs         = require('fs');
 var path       = require('path');
 var RSVP       = require('rsvp');
-var quickTemp  = require('quick-temp');
 var mkdirp     = require('mkdirp');
 var browserify = require('browserify');
-var walkSync   = require('walk-sync');
 var glob       = require('glob');
 var through    = require('through2');
 var xtend      = require('xtend');
 var hashTree   = require('broccoli-kitchen-sink-helpers').hashTree;
+var BrocPlugin = require('broccoli-plugin');
 
-function FastBrowserify(inputTree, options) {
-  if (!(this instanceof FastBrowserify)) { return new FastBrowserify(inputTree, options); }
+function FastBrowserify(inputNode, options) {
+  if (!(this instanceof FastBrowserify)) { return new FastBrowserify(inputNode, options); }
 
   this.options = this.getOptions(options || {});
-  this.destDir = quickTemp.makeOrRemake(this, 'tmpDestDir');
 
-  this.inputTree = inputTree;
+  inputNode = Array.isArray(inputNode) ? inputNode : [inputNode];
+
+  BrocPlugin.call(this, inputNode, options);
 
   this.bundles = {};
   this.cache = {};
@@ -25,10 +25,11 @@ function FastBrowserify(inputTree, options) {
   this.packageCache = {};
 }
 
+FastBrowserify.prototype = Object.create(BrocPlugin.prototype);
+
 FastBrowserify.prototype.getOptions = function(options) {
   var bundleExtension = options.bundleExtension || '.browserify';
   var outputExtension = options.outputExtension || '.js';
-  var self = this;
 
   if (bundleExtension[0] != '.') { bundleExtension = '.' + bundleExtension; }
   if (outputExtension[0] != '.') { outputExtension = '.' + outputExtension; }
@@ -77,194 +78,192 @@ FastBrowserify.prototype.getOptions = function(options) {
   }, options);
 };
 
-FastBrowserify.prototype.cleanup = function() {
-  quickTemp.remove(this, 'tmpDestDir');
-};
-
-FastBrowserify.prototype.read = function(readTree) {
+FastBrowserify.prototype.build = function() {
   var self = this;
   var promises = [];
 
-  return readTree(this.inputTree).then(function(srcDir) {
-    // remove output files that don't have a corrisponding input file anymore
-    self.cleanupBundles();
-    self.invalidateCache();
+  this.destDir = this.outputPath;
 
-    for (var bundleNameOrGlob in self.options.bundles) {
-      var bundleTemplate = self.options.bundles[bundleNameOrGlob];
-      var bundleFiles = [];
+  var srcDir = this.inputPaths[0];
 
-      // If we're dealing with multiple bundle files in a single declaration
-      // then the bundle key is a glob to the files that serve as the basis to
-      // determine which bundles to create (they are often the entrypoints to the bundle)
-      if (bundleTemplate.glob) {
-        bundleFiles = glob.sync(bundleNameOrGlob, { cwd: srcDir, mark: true });
-      } else {
-        // If we're dealing with a single bundle declaration, then the bundle key
-        // is the path to the output bundle, and the user must specify a list of
-        // entryPoints
-        bundleFiles = [bundleNameOrGlob];
-      }
+  // remove output files that don't have a corrisponding input file anymore
+  this.cleanupBundles();
+  this.invalidateCache();
 
-      bundleFiles.forEach(function(relativePath) {
-        var bundle = self.bundles[relativePath];
+  for (var bundleNameOrGlob in this.options.bundles) {
+    var bundleTemplate = this.options.bundles[bundleNameOrGlob];
+    var bundleFiles = [];
 
-        if (! bundle) {
-          var outputBasename;
-          var outputRelativePath;
-          var outputAbsolutePath;
-          var entryPoints;
-
-          if (bundleTemplate.glob) {
-            if (! _.isFunction(bundleTemplate.outputPath)) {
-              throw "When glob == true, outputPath must be a function that returns the output bundle filename";
-            }
-            outputRelativePath = bundleTemplate.outputPath.call(self, relativePath);
-          } else {
-            if (bundleTemplate.outputPath) {
-              throw "outputPath is only valid for glob bundle specifications, specify the output bundle filename in the key of the bundle specification";
-            }
-            outputRelativePath = relativePath;
-          }
-
-          // Add on the globally specified output directory if specified
-          if (self.options.outputDirectory && _.isString(self.options.outputDirectory)) {
-            outputRelativePath = path.join(self.options.outputDirectory, outputRelativePath);
-          }
-
-          entryPoints = self.readEntryPoints(srcDir, relativePath, bundleTemplate);
-
-          if (entryPoints.absolute.length === 0 && !bundleTemplate.require) {
-            console.log("Bundle specified by \"", relativePath, "\" does not have any entry files nor required modules.");
-          } else {
-            // hash the entryPoints so we can tell if they change so we can update
-            // the browerify options with the new files
-            var entryPointsHashes = [];
-            for (var i = 0; i < entryPoints.absolute.length; ++i) {
-              entryPointsHashes.push(hashTree(entryPoints.absolute[i]));
-            }
-
-            outputBasename = path.basename(outputRelativePath);
-            outputAbsolutePath = path.resolve(self.destDir, outputRelativePath);
-
-            bundle = {
-              key: relativePath,
-              srcDir: srcDir,
-              template: bundleTemplate,
-              browserify: null,
-              entryPoints: entryPoints.absolute,
-              entryPointsHashes: entryPointsHashes,
-              outputBasename: outputBasename,
-              outputFileName: outputAbsolutePath,
-              browserifyOptions: _.clone(self.options.browserify),
-              dependentFileNames: {}
-            };
-
-            bundle.browserifyOptions = _.extend(bundle.browserifyOptions, {
-              basedir: srcDir,
-              cache: self.cache,
-              packageCache: self.packageCache,
-              extensions: ['.js', self.options.bundleExtension].concat(self.options.browserify.extensions || []),
-              entries: entryPoints.relative
-            });
-
-            bundle.browserify = browserify(bundle.browserifyOptions);
-
-            // Set up the external files
-            [].concat(self.options.externals).concat(bundleTemplate.externals).filter(Boolean).forEach(function(external) {
-              var externalFile;
-              var externalSplit = external.split(/:/);
-              // var externalOptions = { basedir: srcDir };
-              var externalOptions = { };
-
-              if (externalSplit.length === 2) {
-                externalFile = externalSplit[0];
-                var externalExpose = externalSplit[1];
-
-                externalOptions = xtend({
-                  expose: externalExpose
-                }, externalOptions);
-              } else {
-                externalFile = external;
-              }
-
-              if (/^[\/.]/.test(externalFile)) {
-                // externalFile = path.resolve(srcDir, externalFile);
-                externalFile = path.resolve(externalFile);
-              }
-
-              bundle.browserify.external(externalFile, externalOptions);
-            });
-
-            if (bundleTemplate.transform) {
-              // Set up the transforms
-              bundleTemplate.transform = [].concat(bundleTemplate.transform);
-              bundleTemplate.transform.forEach(function (transform) {
-                if (_.isPlainObject(transform)) {
-                  bundle.browserify.transform(transform.tr, transform.options || {});
-                } else {
-                  bundle.browserify.transform.apply(bundle.browserify, Array.prototype.concat(transform));
-                }
-              });
-            }
-
-            if (bundleTemplate.require) {
-              // Set up the requires
-              bundleTemplate.require = Array.prototype.concat(bundleTemplate.require);
-              bundleTemplate.require.forEach(function (require) {
-                browserify.prototype.require.apply(bundle.browserify, Array.prototype.concat(require))
-              });
-            }
-
-            // Watch dependencies for changes and invalidate the cache when needed
-            var collect = function() {
-              bundle.browserify.pipeline.get('deps').push(through.obj(function(row, enc, next) {
-                var file = row.expose ? bundle.browserify._expose[row.id] : row.file;
-
-                if (self.cache) {
-                  bundle.browserifyOptions.cache[file] = {
-                    source: row.source,
-                    deps: xtend({}, row.deps)
-                  };
-                }
-
-                this.push(row);
-                next();
-              }));
-            };
-
-            // Cache the dependencies and re-run the cache when we re-bundle
-            bundle.browserify.on('reset', collect);
-            collect();
-
-            bundle.browserify.on('file', function(file) {
-              self.watchFiles[file] = hashTree(file);
-              bundle.dependentFileNames[file] = file;
-            });
-
-            bundle.browserify.on('package', function(pkg) {
-              var packageFile = path.join(pkg.__dirname, 'package.json');
-              if (fs.existsSync(packageFile)) {
-                self.watchFiles[packageFile] = hashTree(packageFile);
-                bundle.dependentFileNames[packageFile] = packageFile;
-              }
-            });
-
-            self.bundles[relativePath] = bundle;
-
-            // Create the target directory in the destination
-            mkdirp.sync(path.dirname(bundle.outputFileName));
-
-            promise = self.bundle(bundle);
-            promises.push(promise);
-          }
-        }
-      });
+    // If we're dealing with multiple bundle files in a single declaration
+    // then the bundle key is a glob to the files that serve as the basis to
+    // determine which bundles to create (they are often the entrypoints to the bundle)
+    if (bundleTemplate.glob) {
+      bundleFiles = glob.sync(bundleNameOrGlob, { cwd: srcDir, mark: true });
+    } else {
+      // If we're dealing with a single bundle declaration, then the bundle key
+      // is the path to the output bundle, and the user must specify a list of
+      // entryPoints
+      bundleFiles = [bundleNameOrGlob];
     }
 
-    return RSVP.all(promises).then(function(outputFiles) {
-      return self.destDir;
+    bundleFiles.forEach(function(relativePath) {
+      var bundle = self.bundles[relativePath];
+
+      if (! bundle) {
+        var outputBasename;
+        var outputRelativePath;
+        var outputAbsolutePath;
+        var entryPoints;
+
+        if (bundleTemplate.glob) {
+          if (! _.isFunction(bundleTemplate.outputPath)) {
+            throw "When glob == true, outputPath must be a function that returns the output bundle filename";
+          }
+          outputRelativePath = bundleTemplate.outputPath.call(self, relativePath);
+        } else {
+          if (bundleTemplate.outputPath) {
+            throw "outputPath is only valid for glob bundle specifications, specify the output bundle filename in the key of the bundle specification";
+          }
+          outputRelativePath = relativePath;
+        }
+
+        // Add on the globally specified output directory if specified
+        if (self.options.outputDirectory && _.isString(self.options.outputDirectory)) {
+          outputRelativePath = path.join(self.options.outputDirectory, outputRelativePath);
+        }
+
+        entryPoints = self.readEntryPoints(srcDir, relativePath, bundleTemplate);
+
+        if (entryPoints.absolute.length === 0 && !bundleTemplate.require) {
+          console.log("Bundle specified by \"", relativePath, "\" does not have any entry files nor required modules.");
+        } else {
+          // hash the entryPoints so we can tell if they change so we can update
+          // the browerify options with the new files
+          var entryPointsHashes = [];
+          for (var i = 0; i < entryPoints.absolute.length; ++i) {
+            entryPointsHashes.push(hashTree(entryPoints.absolute[i]));
+          }
+
+          outputBasename = path.basename(outputRelativePath);
+          outputAbsolutePath = path.resolve(self.destDir, outputRelativePath);
+
+          bundle = {
+            key: relativePath,
+            srcDir: srcDir,
+            template: bundleTemplate,
+            browserify: null,
+            entryPoints: entryPoints.absolute,
+            entryPointsHashes: entryPointsHashes,
+            outputBasename: outputBasename,
+            outputFileName: outputAbsolutePath,
+            browserifyOptions: _.clone(self.options.browserify),
+            dependentFileNames: {}
+          };
+
+          bundle.browserifyOptions = _.extend(bundle.browserifyOptions, {
+            basedir: srcDir,
+            cache: self.cache,
+            packageCache: self.packageCache,
+            extensions: ['.js', self.options.bundleExtension].concat(self.options.browserify.extensions || []),
+            entries: entryPoints.relative
+          });
+
+          bundle.browserify = browserify(bundle.browserifyOptions);
+
+          // Set up the external files
+          [].concat(self.options.externals).concat(bundleTemplate.externals).filter(Boolean).forEach(function(external) {
+            var externalFile;
+            var externalSplit = external.split(/:/);
+            // var externalOptions = { basedir: srcDir };
+            var externalOptions = { };
+
+            if (externalSplit.length === 2) {
+              externalFile = externalSplit[0];
+              var externalExpose = externalSplit[1];
+
+              externalOptions = xtend({
+                expose: externalExpose
+              }, externalOptions);
+            } else {
+              externalFile = external;
+            }
+
+            if (/^[\/.]/.test(externalFile)) {
+              // externalFile = path.resolve(srcDir, externalFile);
+              externalFile = path.resolve(externalFile);
+            }
+
+            bundle.browserify.external(externalFile, externalOptions);
+          });
+
+          if (bundleTemplate.transform) {
+            // Set up the transforms
+            bundleTemplate.transform = [].concat(bundleTemplate.transform);
+            bundleTemplate.transform.forEach(function (transform) {
+              if (_.isPlainObject(transform)) {
+                bundle.browserify.transform(transform.tr, transform.options || {});
+              } else {
+                bundle.browserify.transform.apply(bundle.browserify, Array.prototype.concat(transform));
+              }
+            });
+          }
+
+          if (bundleTemplate.require) {
+            // Set up the requires
+            bundleTemplate.require = Array.prototype.concat(bundleTemplate.require);
+            bundleTemplate.require.forEach(function (require) {
+              browserify.prototype.require.apply(bundle.browserify, Array.prototype.concat(require))
+            });
+          }
+
+          // Watch dependencies for changes and invalidate the cache when needed
+          var collect = function() {
+            bundle.browserify.pipeline.get('deps').push(through.obj(function(row, enc, next) {
+              var file = row.expose ? bundle.browserify._expose[row.id] : row.file;
+
+              if (self.cache) {
+                bundle.browserifyOptions.cache[file] = {
+                  source: row.source,
+                  deps: xtend({}, row.deps)
+                };
+              }
+
+              this.push(row);
+              next();
+            }));
+          };
+
+          // Cache the dependencies and re-run the cache when we re-bundle
+          bundle.browserify.on('reset', collect);
+          collect();
+
+          bundle.browserify.on('file', function(file) {
+            self.watchFiles[file] = hashTree(file);
+            bundle.dependentFileNames[file] = file;
+          });
+
+          bundle.browserify.on('package', function(pkg) {
+            var packageFile = path.join(pkg.__dirname, 'package.json');
+            if (fs.existsSync(packageFile)) {
+              self.watchFiles[packageFile] = hashTree(packageFile);
+              bundle.dependentFileNames[packageFile] = packageFile;
+            }
+          });
+
+          self.bundles[relativePath] = bundle;
+
+          // Create the target directory in the destination
+          mkdirp.sync(path.dirname(bundle.outputFileName));
+
+          var promise = self.bundle(bundle);
+          promises.push(promise);
+        }
+      }
     });
+  }
+
+  return RSVP.all(promises).then(function(outputFiles) {
+    return self.destDir;
   });
 };
 
@@ -325,7 +324,6 @@ FastBrowserify.prototype.invalidateCache = function() {
   var file;
   var i;
   var time;
-  var fileMTime;
 
   for (bundleKey in this.bundles) {
     bundle = this.bundles[bundleKey];
